@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>TravelCompare</title>
+
+        <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/7893/7893979.png">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <link rel="stylesheet" href="style.css">
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+        <style>
+            /* Modal Overlay (Glass Effect) */
+            .modal-overlay {
+                display: none; /* Hidden by default */
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(8px); /* Blurs background */
+                z-index: 2000;
+                justify-content: center;
+                align-items: center;
+                animation: fadeIn 0.3s ease;
+            }
+
+            /* Modal Box */
+            .modal-content {
+                background: rgba(30, 41, 59, 0.95);
+                padding: 40px;
+                border-radius: 24px;
+                width: 90%;
+                max-width: 400px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                position: relative;
+            }
+
+            /* Close Button */
+            .close-btn {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                background: transparent;
+                border: none;
+                color: #94a3b8;
+                font-size: 1.2rem;
+                cursor: pointer;
+                transition: color 0.3s;
+            }
+            .close-btn:hover { color: white; }
+
+            /* Tabs (Login/Signup) */
+            .auth-tabs {
+                display: flex;
+                background: rgba(0, 0, 0, 0.3);
+                padding: 4px;
+                border-radius: 12px;
+                margin-bottom: 30px;
+            }
+            .auth-tabs button {
+                flex: 1;
+                padding: 10px;
+                border: none;
+                background: transparent;
+                color: #94a3b8;
+                font-weight: 600;
+                cursor: pointer;
+                border-radius: 8px;
+                transition: all 0.3s ease;
+            }
+            .auth-tabs button.active {
+                background: #3b82f6;
+                color: white;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            }
+
+            /* Header & Inputs */
+            .modal-header { margin-bottom: 25px; text-align: center; }
+            .modal-header h2 { margin: 0; font-size: 1.8rem; color: white; }
+            .modal-header p { margin: 8px 0 0; color: #94a3b8; font-size: 0.9rem; }
+
+            .input-group-premium { position: relative; margin-bottom: 16px; }
+            .input-group-premium i {
+                position: absolute;
+                left: 16px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #64748b;
+            }
+            .input-group-premium input {
+                width: 100%;
+                padding: 14px 14px 14px 45px;
+                background: rgba(0, 0, 0, 0.2);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
+                color: white;
+                font-size: 1rem;
+                outline: none;
+                transition: 0.3s;
+                box-sizing: border-box;
+            }
+            .input-group-premium input:focus {
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            }
+
+            /* Buttons & Links */
+            .form-actions { display: flex; justify-content: flex-end; margin-bottom: 20px; }
+            .form-actions a { color: #3b82f6; font-size: 0.9rem; text-decoration: none; }
+
+            .btn-submit {
+                width: 100%;
+                padding: 14px;
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                color: white;
+                border: none;
+                border-radius: 12px;
+                font-weight: 600;
+                font-size: 1rem;
+                cursor: pointer;
+                transition: transform 0.2s;
+            }
+            .btn-submit:hover { transform: translateY(-2px); }
+
+            /* Divider */
+            .divider { text-align: center; margin: 25px 0; position: relative; }
+            .divider::before {
+                content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: rgba(255,255,255,0.1); z-index: 0;
+            }
+            .divider span {
+                background: #1e293b; padding: 0 10px; color: #64748b; font-size: 0.85rem; position: relative; z-index: 1;
+            }
+
+            @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        </style>
+    </head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo" onclick="window.scrollTo(0,0); window.location.reload();">
+            <i class="fas fa-plane-departure" style="color: var(--primary);"></i>
+            TravelCompare
+        </div>
+        <div class="nav-links">
+            <a href="#">Flights</a>
+            <a href="#">Hotels</a>
+            <button class="btn-login" onclick="document.getElementById('loginModal').style.display='flex'">Sign In</button>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Travel more,<br>spend less.</h1>
+            <p>Compare deals from over 700 travel sites with one click.</p>
+
+            <form id="search-form" class="search-box">
+                <div class="input-group">
+                    <i class="fas fa-plane-departure"></i>
+                    <input type="text" id="from" list="airports" placeholder="From (e.g., DEL)" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <input type="text" id="to" list="airports" placeholder="To (e.g., DXB)" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-calendar-alt"></i>
+                    <input type="date" id="date" required>
+                </div>
+                <button type="submit" class="btn-search">Search</button>
+            </form>
+
+            <datalist id="airports">
+                <option value="New Delhi (DEL)">
+                <option value="Mumbai (BOM)">
+                <option value="Bengaluru (BLR)">
+                <option value="Chennai (MAA)">
+                <option value="Dubai (DXB)">
+                <option value="London (LHR)">
+                <option value="Singapore (SIN)">
+                <option value="New York (JFK)">
+            </datalist>
+        </div>
+    </header>
+
+    <section id="results-area" class="container" style="display:none;">
+        <h2><i class="fas fa-search"></i> Best Flights Found</h2>
+        <div id="results-list" class="cards-grid"></div>
+    </section>
+
+    <section class="container">
+        <h2>Trending Destinations</h2>
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-img" style="background-image: url('dubai.webp');"></div>
+                <div class="card-content">
+                    <h3>Dubai, UAE</h3>
+                    <p style="color:#94a3b8; font-size:0.9rem;">5 Nights Package</p>
+                    <div class="price-tag">₹35,000</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1548013146-72479768bada?q=80&w=1200&auto=format&fit=crop');"></div>
+                <div class="card-content">
+                    <h3>Taj Mahal, India</h3>
+                    <p style="color:#94a3b8; font-size:0.9rem;">Luxury Stay from</p>
+                    <div class="price-tag">₹12,200</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=1200&auto=format&fit=crop');"></div>
+                <div class="card-content">
+                    <h3>Paris, France</h3>
+                    <p style="color:#94a3b8; font-size:0.9rem;">Direct flights from</p>
+                    <div class="price-tag">₹45,999</div>
+                </div>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="http://localhost:3001/api/download?file=travel_brochure.pdf" target="_blank" style="color: #94a3b8; text-decoration: underline; cursor: pointer;">
+                <i class="fas fa-file-pdf"></i> Download Brochure
+            </a>
+        </div>
+    </section>
+    <section class="container" style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 40px; padding-top: 40px;">
+        <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+            <h2 style="color: white; margin-bottom: 10px;">Need Help?</h2>
+            <p style="color: #94a3b8; margin-bottom: 20px;">Send a message to our support team.</p>
+
+            <form id="contact-form" style="position: relative;">
+                <div class="input-group-premium">
+                    <i class="fas fa-comment-alt"></i>
+                    <input type="text" id="contact-msg" placeholder="Describe your issue..." required style="padding-right: 100px;">
+                    <button type="submit" style="position: absolute; right: 5px; top: 5px; bottom: 5px; background: var(--primary); color: white; border: none; border-radius: 8px; padding: 0 20px; cursor: pointer; font-weight: 600;">
+                        Send
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-col">
+                <div class="logo" style="margin-bottom: 20px;">TravelCompare</div>
+                <p>We are the world's leading travel comparison tool.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Company</h4>
+                <a href="#">About Us</a>
+                <a href="#">Careers</a>
+            </div>
+            <div class="footer-col">
+                <h4>Support</h4>
+                <a href="#">Help Center</a>
+                <a href="#">Privacy Policy</a>
+            </div>
+            <div class="footer-col">
+                <h4>Partners</h4>
+                <a href="#">Advertise with us</a>
+                <a href="#" onclick="triggerAdminLogin()" style="opacity: 0.5;">Employee Login</a>
+            </div>
+        </div>
+        <div style="text-align: center; color: #334155; margin-top: 30px; border-top: 1px solid #1e293b; padding-top: 20px;">
+            &copy; 2025 TravelCompare Inc. All rights reserved.
+        </div>
+    </footer>
+
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-btn" onclick="document.getElementById('loginModal').style.display='none'">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="auth-tabs">
+                <button id="tab-login" class="active" onclick="switchTab('login')">Log In</button>
+                <button id="tab-register" onclick="switchTab('register')">Sign Up</button>
+            </div>
+
+            <div class="modal-header">
+                <h2 id="modal-title">Welcome Back</h2>
+                <p id="modal-subtitle">Enter your details to access your account.</p>
+            </div>
+
+            <form class="auth-form" onsubmit="event.preventDefault(); handleAuth();">
+
+                <div class="input-group-premium" id="name-field" style="display: none;">
+                    <i class="fas fa-user"></i>
+                    <input type="text" placeholder="Full Name">
+                </div>
+
+                <div class="input-group-premium">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" placeholder="Email Address" required>
+                </div>
+
+                <div class="input-group-premium">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" placeholder="Password" required>
+                </div>
+
+                <div class="form-actions" id="forgot-pass-link">
+                    <a href="#">Forgot Password?</a>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submit-btn">Sign In</button>
+            </form>
+
+            <div class="divider">
+                <span>or continue with</span>
+            </div>
+
+            <div id="g_id_onload"
+                 data-client_id="705646434030-dfp1hoo6uia9u84oal0etktdgscj9u71.apps.googleusercontent.com"
+                 data-callback="handleCredentialResponse"
+                 data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin" data-type="standard" data-size="large" data-theme="filled_black" data-text="sign_in_with" data-shape="pill" data-logo_alignment="center" style="display: flex; justify-content: center; width: 100%;"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // --- NAVBAR SCROLL EFFECT ---
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // --- AUTH TAB SWITCHER LOGIC ---
+        function switchTab(tab) {
+            const title = document.getElementById('modal-title');
+            const subtitle = document.getElementById('modal-subtitle');
+            const submitBtn = document.getElementById('submit-btn');
+            const nameField = document.getElementById('name-field');
+            const forgotLink = document.getElementById('forgot-pass-link');
+
+            // Buttons
+            const loginBtn = document.getElementById('tab-login');
+            const regBtn = document.getElementById('tab-register');
+
+            if (tab === 'login') {
+                title.innerText = "Welcome Back";
+                subtitle.innerText = "Enter your details to access your account.";
+                submitBtn.innerText = "Sign In";
+                nameField.style.display = 'none';
+                forgotLink.style.display = 'flex';
+                loginBtn.classList.add('active');
+                regBtn.classList.remove('active');
+            } else {
+                title.innerText = "Create Account";
+                subtitle.innerText = "Join us to unlock exclusive travel deals.";
+                submitBtn.innerText = "Sign Up";
+                nameField.style.display = 'block';
+                forgotLink.style.display = 'none';
+                loginBtn.classList.remove('active');
+                regBtn.classList.add('active');
+            }
+        }
+
+        // --- AUTH FORM HANDLER ---
+        function handleAuth() {
+            const isLogin = document.getElementById('tab-login').classList.contains('active');
+            if(isLogin) {
+                // Call your login API here
+                alert("Logging in...");
+            } else {
+                // Call your signup API here
+                alert("Creating account...");
+            }
+        }
+
+        // --- ADMIN LOGIN (Hidden Feature) ---
+        function triggerAdminLogin() {
+            const user = prompt("ID:");
+            const pass = prompt("Key:");
+            if(user) {
+                fetch('http://localhost:3001/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                }).then(res => res.json()).then(data => {
+                    if(data.redirect) window.location.href = data.redirect;
+                });
+            }
+        }
+            // Wait for HTML to load completely
+            document.addEventListener("DOMContentLoaded", function() {
+
+                const contactForm = document.getElementById('contact-form');
+
+                // Safety Check: Does the form actually exist?
+                if (contactForm) {
+                    contactForm.addEventListener('submit', function(e) {
+                        // 1. STOP THE PAGE RELOAD
+                        e.preventDefault();
+                        console.log("Submit captured! Sending to honeypot..."); // Debug message
+
+                        const msgInput = document.getElementById('contact-msg');
+                        const msg = msgInput ? msgInput.value : "";
+
+                        // 2. SEND DATA TO SERVER
+                        fetch('http://localhost:3001/api/contact', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: msg })
+                        })
+                        .then(response => {
+                            // Check if we got a JSON response or the HTML "Fake Error"
+                            const contentType = response.headers.get("content-type");
+                            if (contentType && contentType.includes("application/json")) {
+                                return response.json().then(data => alert(data.message));
+                            } else {
+                                return response.text().then(text => {
+                                    // If server sent HTML (the fake 403 error), show it
+                                    document.body.innerHTML = text;
+                                });
+                            }
+                        })
+                        .catch(err => console.error("Error connecting to honeypot:", err));
+                    });
+                } else {
+                    console.error("Error: Could not find element with id 'contact-form'");
+                }
+            });
+    </script>
+</body>
+</html>

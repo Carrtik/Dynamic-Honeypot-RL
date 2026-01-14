@@ -1,0 +1,20 @@
+version: '3'
+services:
+  backend:
+    build: ./travel_compare_backend
+    ports:
+      - "3001:3001"
+    volumes:
+      # ⚠️ FIX: Map directly to /app where your code lives
+      - ./travel_compare_backend:/app
+      # Keep node_modules inside the container safe
+      - /app/node_modules
+
+  frontend:
+    build: ./travel_compare_app
+    ports:
+      - "8000:80"
+    volumes:
+      - ./travel_compare_app:/usr/share/nginx/html
+    depends_on:
+      - backend
